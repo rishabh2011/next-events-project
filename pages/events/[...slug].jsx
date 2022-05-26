@@ -1,45 +1,12 @@
 import { Fragment } from "react";
-import { useRouter } from "next/router";
-import { getFilteredEvents } from "../../dummy-data";
 import EventList from "../../components/events/EventList";
 import ResultsTitle from "../../components/results-title/results-title";
 import Button from "../../components/ui/button";
 import ErrorAlert from "../../components/ui/error-alert/error-alert";
 
-function FilteredEventsPage() {
-  const router = useRouter();
-  const filteredData = router.query.slug;
+function FilteredEventsPage(props) {
 
-  if (!filteredData) {
-    return <p className="center">Loading...</p>;
-  }
-
-  const filteredYear = Number(filteredData[0]);
-  const filteredMonth = Number(filteredData[1]);
-
-  if (
-    isNaN(filteredYear) ||
-    isNaN(filteredMonth) ||
-    filteredMonth < 1 ||
-    filteredMonth > 12
-  ) {
-    return (
-      <Fragment>
-        <ErrorAlert>
-          <p>Wrong Filter</p>
-        </ErrorAlert>
-        <div className="center">
-          <Button link="/events">Show All Events</Button>
-        </div>
-      </Fragment>
-    );
-  }
-
-  const filteredEvents = getFilteredEvents({
-    year: filteredYear,
-    month: filteredMonth,
-  });
-  if (!filteredEvents || filteredEvents.length === 0) {
+  if (!props.filteredEvents || props.filteredEvents.length === 0) {
     return (
       <Fragment>
         <ErrorAlert>
@@ -52,14 +19,45 @@ function FilteredEventsPage() {
     );
   }
 
-  const date = new Date(filteredYear, filteredMonth - 1);
-
+  const date = new Date(props.filteredYear, props.filteredMonth - 1);
   return (
     <Fragment>
       <ResultsTitle date={date} />
-      <EventList events={filteredEvents} />
+      <EventList events={props.filteredEvents} />
     </Fragment>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { params } = context;
+  
+  const filteredYear = Number(params.slug[0]);
+  const filteredMonth = Number(params.slug[1]);
+
+  const response = await fetch(
+    "https://next-page-344bb-default-rtdb.firebaseio.com/events.json"
+  );
+  const data = await response.json();
+  let events = getFilteredEvents(data, filteredYear, filteredMonth);
+  
+  return {
+    props: {
+      filteredYear: filteredYear,
+      filteredMonth: filteredMonth,
+      filteredEvents: events,
+    },
+  };
+}
+
+function getFilteredEvents(events, year, month) {
+  let filteredEvents = [];
+  for(const key in events){
+    const eventDate = new Date(events[key].date);
+    if(eventDate.getFullYear() === year && eventDate.getMonth() === month - 1){
+      filteredEvents.push({id: key, ...events[key]});
+    }
+  }
+  return filteredEvents;
 }
 
 export default FilteredEventsPage;
