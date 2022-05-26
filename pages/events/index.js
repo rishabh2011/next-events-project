@@ -1,16 +1,27 @@
 import EventList from "../../components/events/EventList";
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import ErrorAlert from "../../components/ui/error-alert/error-alert";
-import Button from "../../components/ui/button";
 import useSWR from "swr";
 
 function AllEventsPage() {
+  const [loadedEvents, setLoadedEvents] = useState();
+
   const fetcher = (...args) => fetch(...args).then((res) => res.json());
   const { data, error } = useSWR(
     "https://next-page-344bb-default-rtdb.firebaseio.com/events.json",
     fetcher
   );
-  const allEvents = [];
+
+  useEffect(() => {
+    if (data) {
+      console.log("running");
+      const allEvents = [];
+      for (const key in data) {
+        allEvents.push({ id: key, ...data[key] });
+      }
+      setLoadedEvents(allEvents);
+    }
+  }, [data]);
 
   if (error) {
     return <p>Failed to Load</p>;
@@ -20,11 +31,7 @@ function AllEventsPage() {
     return <p>Loading...</p>;
   }
 
-  for (const key in data) {
-    allEvents.push({ id: key, ...data[key] });
-  }
-
-  if (!allEvents || allEvents.length === 0) {
+  if (!loadedEvents || loadedEvents.length === 0) {
     return (
       <Fragment>
         <ErrorAlert>
@@ -36,7 +43,7 @@ function AllEventsPage() {
 
   return (
     <div>
-      <EventList events={allEvents} />
+      <EventList events={loadedEvents} />
     </div>
   );
 }
