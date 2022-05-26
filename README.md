@@ -1,1 +1,1 @@
-A simple nextjs app that displays various events that the the user can filter by date and navigate to. This project is an exercise in developing experience with nextjs file based routing
+A simple nextjs app that displays various events that the the user can filter by date and navigate to. This project is an exercise in developing experience with various nextjs features such as file-based routing and page pre-rendering and data pre-fetching.
